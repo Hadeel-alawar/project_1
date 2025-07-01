@@ -36,7 +36,7 @@ class StudentController extends Controller
             return $this->returnError($validator->errors()->first());
         }
 
-        $otp = mt_rand(100000, 999999);;
+        $otp = mt_rand(100000, 999999);
         $expiresAt = Carbon::now()->addMinutes(10);
 
         $student = Student::create([

@@ -4,8 +4,10 @@ use App\Http\Controllers\StudentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\CourseController;
+use App\Models\Teacher;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
-
+use Illuminate\Routing\RouteRegistrar;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -19,7 +21,12 @@ Route::prefix('teacher')->group(function () {
     Route::middleware("auth.teacher")->group(function () {
         Route::get('logout', [TeacherController::class, 'logout']);
         Route::middleware('teacherVerified')->group(function () {
-            Route::get('me', [TeacherController::class, 'me']);
+            Route::get('view_profile', [TeacherController::class, 'viewProfile']);
+            Route::post("create_course", [TeacherController::class, "createCourse"]);
+            Route::post("update_profile", [TeacherController::class, "updateProfile"]);
+            Route::get("view_teacher's_courses", [TeacherController::class, "myCourses"]);
+            Route::get("view_course_details/{id}", [TeacherController::class, "showCourse"]);
+            Route::post("add_to_course/{course_id}", [TeacherController::class, "addContentToCourse"]);
         });
     });
 });
@@ -32,8 +39,7 @@ Route::prefix('student')->group(function () {
     Route::middleware("auth.student")->group(function () {
         Route::get('logout', [StudentController::class, 'logout']);
         Route::middleware('studentVerified')->group(function () {
-        Route::get('me', [StudentController::class, 'me']);
+            Route::get('me', [StudentController::class, 'me']);
+        });
     });
-    });
-
 });
