@@ -13,6 +13,7 @@ trait ResponseTrait
             "statusNumber" => $errorNumber
         ]);
     }
+
     public function returnSuccess($message = "", $status = 200)
     {
         return response()->json([
@@ -21,6 +22,7 @@ trait ResponseTrait
             "statusNumber" => $status,
         ], $status);
     }
+
     public function returnData($message = "", $key = "", $value = [], $status = 200)
     {
         return response()->json([
