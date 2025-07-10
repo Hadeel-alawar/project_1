@@ -51,6 +51,7 @@ Route::prefix('student')->group(function () {
             Route::get("viewCourseDet/{id}",[StudentController::class,"courseDetails"]);
             Route::get("viewTeacherPro/{teacherId}",[StudentController::class,"teacherProfile"]);
             Route::get("browseTacherCourses/{teacherId}",[StudentController::class,"teacherCourses"]);
+            
         });
     });
 });
