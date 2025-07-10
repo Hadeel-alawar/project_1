@@ -5,13 +5,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\EnrollmentController;
 use App\Models\Teacher;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Routing\RouteRegistrar;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
 
 Route::prefix('teacher')->group(function () {
     Route::post('register', [TeacherController::class, 'register']);
@@ -21,12 +19,17 @@ Route::prefix('teacher')->group(function () {
     Route::middleware("auth.teacher")->group(function () {
         Route::get('logout', [TeacherController::class, 'logout']);
         Route::middleware('teacherVerified')->group(function () {
-            Route::get('view_profile', [TeacherController::class, 'viewProfile']);
-            Route::post("create_course", [TeacherController::class, "createCourse"]);
-            Route::post("update_profile", [TeacherController::class, "updateProfile"]);
-            Route::get("view_teacher's_courses", [TeacherController::class, "myCourses"]);
-            Route::get("view_course_details/{id}", [TeacherController::class, "showCourse"]);
-            Route::post("add_to_course/{course_id}", [TeacherController::class, "addContentToCourse"]);
+            Route::get('view-profile', [TeacherController::class, 'viewProfile']);
+            Route::post("create-course", [TeacherController::class, "createCourse"]);
+            Route::post("update-profile", [TeacherController::class, "updateProfile"]);
+            Route::get("view-teacher-courses", [TeacherController::class, "myCourses"]);
+            Route::get("view-course-details/{id}", [TeacherController::class, "showCourse"]);
+            Route::post("add-to-course/{course_id}", [TeacherController::class, "addContentToCourse"]);
+            Route::post("delete-course/{id}",[TeacherController::class,"delete_course"]);
+            Route::post("delete-video-from-course{video_id}",[TeacherController::class,"deleteCourseVideo"]);
+            Route::post("delete-material-from-course/{material_id}",[TeacherController::class,"deleteCourseMaterial"]);
+            Route::post("create-quiz",[TeacherController::class,"createQuiz"]);
+            Route::post("calculate-degree",[TeacherController::class,"quizStats"]);
         });
     });
 });
@@ -40,6 +43,14 @@ Route::prefix('student')->group(function () {
         Route::get('logout', [StudentController::class, 'logout']);
         Route::middleware('studentVerified')->group(function () {
             Route::get('me', [StudentController::class, 'me']);
+            Route::post("enroll",[EnrollmentController::class,"enrollInCourse"]);
+            Route::get("browseCourses",[StudentController::class,"getMyCourses"]);
+            Route::post("addToFav",[StudentController::class,"addToFavorites"]);
+            Route::get("viewProfile",[StudentController::class,"profile"]);
+            Route::post("updateProfile",[StudentController::class,"updateProfile"]);
+            Route::get("viewCourseDet/{id}",[StudentController::class,"courseDetails"]);
+            Route::get("viewTeacherPro/{teacherId}",[StudentController::class,"teacherProfile"]);
+            Route::get("browseTacherCourses/{teacherId}",[StudentController::class,"teacherCourses"]);
         });
     });
 });

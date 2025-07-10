@@ -63,6 +63,25 @@ return [
             'report' => false,
         ],
 
+        'course_materials' => [
+            'driver' => 'local',
+            'root' => public_path('courseMaterials'),
+            'url' => env('APP_URL') . '/courseMaterials',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'course_thumbnails' => [
+            'driver' => 'local',
+            'root' => public_path('courseThumbnails'),
+            'url' => env('APP_URL') . '/courseThumbnails',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

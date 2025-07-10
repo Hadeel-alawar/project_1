@@ -51,13 +51,11 @@ class Course extends Authenticatable implements JWTSubject
 
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'enrollments')
-            ->withPivot(['enrolled_at', 'paid', 'is_favorite', 'receipt_path', 'payment_amount', 'admin_share', 'teacher_share', 'payment_date'])
-            ->withTimestamps();
+        return $this->belongsToMany(Student::class, 'enrollments')->withTimestamps();
     }
 
-    // public function skills()
-    // {
-    //     return $this->belongsToMany(Skill::class, 'skills_courses');
-    // }
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(Student::class, 'favorites')->withTimestamps();
+    }
 }

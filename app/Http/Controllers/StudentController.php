@@ -15,6 +15,7 @@ use Auth;
 use App\Mail\SendOtpMail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Course;
 
 class StudentController extends Controller
 {
@@ -128,5 +129,77 @@ class StudentController extends Controller
     public function me()
     {
         return $this->returnData("about me:", "", auth("api-student")->user());;
+    }
+
+    public function getMyCourses()
+    {
+        $student = auth('api-student')->user();
+
+        $courses = $student->courses()->with(['teacher', 'videos', 'materials'])->get();
+
+        return $this->returnData("my courses : ", "courses", $courses);
+    }
+
+    public function addToFavorites(Request $request)
+    {
+        $student = auth('api-student')->user();
+
+        $request->validate([
+            'course_id' => 'required|exists:courses,id',
+        ]);
+
+        $courseId = $request->course_id;
+
+        if (!$student->courses()->where('course_id', $courseId)->exists()) {
+            return $this->returnError("You are not enrolled in this course.");
+        }
+
+        if ($student->favoriteCourses()->where('course_id', $courseId)->exists()) {
+            return $this->returnError("Course is already in favorites.");
+        }
+
+        $student->favoriteCourses()->attach($courseId);
+
+        return $this->returnSuccess("Course added to favorites.");
+    }
+
+    public function profile()
+    {
+        $student = auth('api-student')->user();
+        return $this->returnData("studentProfile",'student', $student);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $student = auth('api-student')->user();
+
+        $data = $request->validate([
+            'full_name' => 'sometimes|string',
+            'user_name' => 'sometimes|string|unique:students,user_name,' . $student->id,
+            'email' => 'sometimes|email|unique:students,email,' . $student->id,
+            'bio' => 'nullable|string',
+        ]);
+
+        $student->update($data);
+
+        return $this->returnSuccess("Profile updated successfully.");
+    }
+
+    public function courseDetails($id)
+    {
+        $course = Course::with(['teacher:id,full_name', 'materials', 'videos'])->findOrFail($id);
+        return $this->returnData("Course details", "course", $course);
+    }
+
+    public function teacherProfile($teacherId)
+    {
+        $teacher = Teacher::withCount('courses')->findOrFail($teacherId);
+        return $this->returnData("teacherProfile",'teacher', $teacher);
+    }
+
+    public function teacherCourses($teacherId)
+    {
+        $courses = Course::where('teacher_id', $teacherId)->get();
+        return $this->returnData("teacherCourses",'courses', $courses);
     }
 }

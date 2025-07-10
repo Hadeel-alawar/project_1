@@ -49,5 +49,4 @@ class Teacher extends Authenticatable implements JWTSubject
     {
         return $this->morphOne(Wallet::class, 'owner');
     }
-
 }

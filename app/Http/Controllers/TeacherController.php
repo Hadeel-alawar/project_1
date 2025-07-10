@@ -59,24 +59,21 @@ class TeacherController extends Controller
             'age' => $request->age,
             'gender' => $request->gender,
             'specialization' => $request->specialization,
-            'cv' => '', // سيتم إضافته بعد رفع الملف
+            'cv' => '',
             'email_otp' => $otp,
             'email_otp_expires_at' => $expiresAt,
             'is_email_verified' => false,
         ]);
 
-        // رفع السيرة الذاتية وتخزين المسار الكامل
         $file = $request->file('cv');
         $fileName = $teacher->id . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs($teacher->id, $fileName, 'teacher_cv');
 
-        // استخدام Storage::disk لتوليد الرابط الصحيح
         $teacher->cv = Storage::disk('teacher_cv')->url($path);
         $teacher->save();
 
         DB::commit();
 
-        // إرسال رمز التفعيل عبر البريد
         Mail::to($teacher->email)->send(new SendOtpMail($otp));
 
         return $this->returnSuccess("Account created successfully. Please check your email for the verification code.");
@@ -172,46 +169,64 @@ class TeacherController extends Controller
 
         $teacher = auth('api-teacher')->user();
 
-        $thumbnailPath = null;
-        if ($request->hasFile('thumbnail')) {
-            $thumbnailPath = $request->file('thumbnail')->store('thumbnails', 'public');
-        }
+        DB::beginTransaction();
 
-        $course = Course::create([
-            'teacher_id' => $teacher->id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'price' => $request->price,
-            'thumbnail_path' => $thumbnailPath,
-            'category_id' => $request->category_id,
-        ]);
-
-        if ($request->hasFile('videos')) {
-            foreach ($request->file('videos') as $video) {
-                $videoPath = $video->store('course_videos', 'course_videos');
-                CourseVideo::create([
-                    'course_id' => $course->id,
-                    'video_path' => $videoPath,
-                ]);
+        try {
+            $thumbnailUrl = null;
+            if ($request->hasFile('thumbnail')) {
+                $thumbnailFile = $request->file('thumbnail');
+                $thumbnailName = uniqid('thumb_') . '.' . $thumbnailFile->getClientOriginalExtension();
+                $path = $thumbnailFile->storeAs($teacher->id, $thumbnailName, 'course_thumbnails');
+                $thumbnailUrl = Storage::disk('course_thumbnails')->url($path);
             }
-        }
 
-        if ($request->hasFile('materials')) {
-            foreach ($request->file('materials') as $material) {
-                $materialPath = $material->store('course_materials', 'public');
-                CourseMaterial::create([
-                    'course_id' => $course->id,
-                    'file_path' => $materialPath,
-                ]);
+            $course = Course::create([
+                'teacher_id' => $teacher->id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'price' => $request->price,
+                'thumbnail_path' => $thumbnailUrl,
+                'category_id' => $request->category_id,
+            ]);
+
+            if ($request->hasFile('videos')) {
+                foreach ($request->file('videos') as $video) {
+                    $videoName = uniqid('video_') . '.' . $video->getClientOriginalExtension();
+                    $videoPath = $video->storeAs($course->id, $videoName, 'course_videos');
+                    $videoUrl = Storage::disk('course_videos')->url($videoPath);
+
+                    CourseVideo::create([
+                        'course_id' => $course->id,
+                        'video_path' => $videoUrl,
+                    ]);
+                }
             }
-        }
 
-        return $this->returnSuccess("Course created successfully.");
+            if ($request->hasFile('materials')) {
+                foreach ($request->file('materials') as $material) {
+                    $materialName = uniqid('material_') . '.' . $material->getClientOriginalExtension();
+                    $materialPath = $material->storeAs($course->id, $materialName, 'course_materials');
+                    $materialUrl = Storage::disk('course_materials')->url($materialPath);
+
+                    CourseMaterial::create([
+                        'course_id' => $course->id,
+                        'file_path' => $materialUrl,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return $this->returnSuccess("Course created successfully.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->returnError("Something went wrong: " . $e->getMessage());
+        }
     }
 
     public function updateProfile(Request $request)
     {
         $teacher = auth('api-teacher')->user();
+
         $validated = $request->validate([
             'full_name' => 'sometimes|string|max:255',
             'user_name' => 'sometimes|string|max:255|unique:teachers,user_name,' . $teacher->id,
@@ -225,19 +240,22 @@ class TeacherController extends Controller
 
         if ($request->hasFile('cv')) {
             $file = $request->file('cv');
-            $cvPath = $file->store('cvs', 'public');
-            $validated['cv'] = $cvPath;
+            $fileName = $teacher->id . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs($teacher->id, $fileName, 'teacher_cv');
+            $validated['cv'] = Storage::disk('teacher_cv')->url($path);
         }
 
         Teacher::where('id', $teacher->id)->update($validated);
 
-        return $this->returnSuccess("Profile updated successfully");
+        return $this->returnSuccess("Profile updated successfully.");
     }
 
     public function myCourses()
     {
         $teacher = auth('api-teacher')->user();
-        $courses = $teacher->courses()->load(['videos', 'materials'])->get();
+        $courses = $teacher->courses()
+            ->with(['videos', 'materials'])
+            ->get();
 
         return $this->returnData("My Courses", "courses", $courses);
     }
@@ -271,20 +289,26 @@ class TeacherController extends Controller
 
         if ($request->hasFile('videos')) {
             foreach ($request->file('videos') as $video) {
-                $videoPath = $video->store('course_videos', 'public');
+                $videoName = uniqid('video_') . '.' . $video->getClientOriginalExtension();
+                $videoPath = $video->storeAs($course->id, $videoName, 'course_videos');
+                $videoUrl = Storage::disk('course_videos')->url($videoPath);
+
                 CourseVideo::create([
                     'course_id' => $course->id,
-                    'video_path' => $videoPath,
+                    'video_path' => $videoUrl,
                 ]);
             }
         }
 
         if ($request->hasFile('materials')) {
             foreach ($request->file('materials') as $material) {
-                $materialPath = $material->store('course_materials', 'public');
+                $materialName = uniqid('material_') . '.' . $material->getClientOriginalExtension();
+                $materialPath = $material->storeAs($course->id, $materialName, 'course_materials');
+                $materialUrl = Storage::disk('course_materials')->url($materialPath);
+
                 CourseMaterial::create([
                     'course_id' => $course->id,
-                    'file_path' => $materialPath,
+                    'file_path' => $materialUrl,
                 ]);
             }
         }
@@ -366,5 +390,60 @@ class TeacherController extends Controller
             : 0;
 
         return response()->json($result);
+    }
+
+    public function delete_course($id)
+    {
+        $teacher = auth('api-teacher')->user();
+
+        $course = $teacher->courses()->find($id);
+
+        if (!$course) {
+            return $this->returnError("Course not found or you do not own it.");
+        }
+
+        $course->delete();
+
+        return $this->returnSuccess("Course deleted successfully.");
+    }
+
+    public function deleteCourseVideo($videoId)
+    {
+        $teacher = auth('api-teacher')->user();
+
+        $video = \App\Models\CourseVideo::find($videoId);
+
+        if (!$video || $video->course->teacher_id !== $teacher->id) {
+            return $this->returnError("Video not found or unauthorized.");
+        }
+
+        $videoPath = str_replace(env('APP_URL') . '/', '', $video->video_path);
+        if (file_exists(public_path($videoPath))) {
+            unlink(public_path($videoPath));
+        }
+
+        $video->delete();
+
+        return $this->returnSuccess("Video deleted successfully.");
+    }
+
+    public function deleteCourseMaterial($materialId)
+    {
+        $teacher = auth('api-teacher')->user();
+
+        $material = \App\Models\CourseMaterial::find($materialId);
+
+        if (!$material || $material->course->teacher_id !== $teacher->id) {
+            return $this->returnError("Material not found or unauthorized.");
+        }
+
+        $materialPath = str_replace(env('APP_URL') . '/', '', $material->file_path);
+        if (file_exists(public_path($materialPath))) {
+            unlink(public_path($materialPath));
+        }
+
+        $material->delete();
+
+        return $this->returnSuccess("Material deleted successfully.");
     }
 }
