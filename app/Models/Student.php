@@ -31,4 +31,19 @@ class Student extends Authenticatable implements JWTSubject
     {
         return $this->belongsToMany(Teacher::class, 'student_teacher', 'student_id', 'teacher_id');
     }
+
+    public function wallet()
+    {
+        return $this->morphOne(Wallet::class, 'owner');
+    }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments')->withTimestamps();
+    }
+
+    public function favoriteCourses()
+    {
+        return $this->belongsToMany(Course::class, 'favorites')->withTimestamps();
+    }
 }

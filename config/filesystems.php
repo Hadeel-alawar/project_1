@@ -40,12 +40,47 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => public_path(''),
             'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],
+        'teacher_cv' => [
+            'driver' => 'local',
+            'root' => public_path('teacherCv'),
+            'url' => env('APP_URL') . '/teacherCv',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+        'course_videos' => [
+            'driver' => 'local',
+            'root' => public_path('course_videos'),
+            'url' => env('APP_URL') . '/course_videos',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'course_materials' => [
+            'driver' => 'local',
+            'root' => public_path('courseMaterials'),
+            'url' => env('APP_URL') . '/courseMaterials',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'course_thumbnails' => [
+            'driver' => 'local',
+            'root' => public_path('courseThumbnails'),
+            'url' => env('APP_URL') . '/courseThumbnails',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
 
         's3' => [
             'driver' => 's3',

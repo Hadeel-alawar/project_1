@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -25,14 +26,14 @@ class User extends Authenticatable implements JWTSubject
     ];
 
     public function getJWTIdentifier()
-{
-    return $this->getKey();
-}
+    {
+        return $this->getKey();
+    }
 
-public function getJWTCustomClaims()
-{
-    return [];
-}
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
 
     /**
      * The attributes that should be hidden for serialization.

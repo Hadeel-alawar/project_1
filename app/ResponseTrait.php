@@ -12,27 +12,26 @@ trait ResponseTrait
             "message" => $msgErorr,
             "statusNumber" => $errorNumber
         ]);
-
-    }
-    public static function returnSuccess($msgSuccess = "", $succesNumber = 200)
-    {
-
-        return response()->json([
-            "status" => true,
-            "message" => $msgSuccess,
-            "statusNumber" => $succesNumber
-        ]);
-
     }
 
-    public static function returnData($msgData = "", $key, $data = [], $responseNumber = 200)
+    public function returnSuccess($message = "", $status = 200)
     {
         return response()->json([
-            "status" => true,
-            "message" => $msgData,
-            "statusNumber" => $responseNumber,
-            "$key" => $data,
-        ]);
+            "status"       => true,
+            "message"      => $message,
+            "statusNumber" => $status,
+        ], $status);
     }
-    
+
+    public function returnData($message = "", $key = "", $value = [], $status = 200)
+    {
+        return response()->json([
+            'status' => true,
+            'message' => $message,
+            'statusNumber' => $status,
+            'data' => [
+                $key => $value
+            ]
+        ], $status);
+    }
 }
